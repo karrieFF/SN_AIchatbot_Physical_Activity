@@ -2,7 +2,6 @@
 #install.packages("MASS")
 library(igraph)
 library(animation)
-library(igraph)
 library(MASS)
 
 # Step 1: initialize network
@@ -10,6 +9,10 @@ set.seed(42) #reproduction
 num_nodes <- 25  # Number of nodes in the network
 
 # Generate a random corr matrix
+# You should explore if igraph has a model for signed networks.
+# That could be useful. The other interesting thing you could do
+# is using an existing model like smallworld and simulate weights
+# on top of the simulated edges.
 cormatrix <- matrix(runif(num_nodes^2, min = -1, max = 1), num_nodes) #consider negative association later
 cormatrix[lower.tri(cormatrix)] <- t(cormatrix)[lower.tri(cormatrix)] #Make symmetric
 diag(cormatrix) <- 0 #set diag as 0
@@ -24,6 +27,9 @@ initial_graph <- graph_from_adjacency_matrix(adj_matrix, mode = "undirected", we
 edge_weights <- cormatrix[adj_matrix]
 
 #define the parameters of the network layout
+# Layouts in igraph are random. I know your are setting a seed earlier
+# but I think it is useful to set seed for each big part of your project.
+# Otherwise you tend to forget!
 fixed_layout <- layout_with_graphopt(initial_graph)
 E(initial_graph)$weight <- edge_weights
 E(initial_graph)$width <- abs(E(initial_graph)$weight) * 4
@@ -46,6 +52,7 @@ numer_phases <- c(n_innovators, n_early_adopters,n_early_majority, n_late_majori
 #calculate weights of each node
 node_strength <- strength(initial_graph, vids = V(initial_graph), mode = "all", weights = E(initial_graph)$weight)
 
+# Ensure to document this using roxygen2
 simulate_diffusion <- function(initial_graph, total_phase, node_strength, numer_phases, node_colors, phase_colors){
   total_phase <- total_phase
   top_indices <- NaN
@@ -59,6 +66,7 @@ simulate_diffusion <- function(initial_graph, total_phase, node_strength, numer_
       top_indices <- order(node_strength, decreasing = TRUE)[1:num_phase]
       
     }else{
+      # I'm unsure how transmission occurs. Let's chat!
       connected_nodes <- unique(unlist(lapply(top_indices, function(x) {
         c(neighbors(initial_graph, x, mode = "all"))
       })))
@@ -85,6 +93,8 @@ simulate_diffusion <- function(initial_graph, total_phase, node_strength, numer_
 }
 
 total_phase <- 5
+# I would encourage you to split your coding lines to 80 characters
+# or less. It is easier to read and maintain later.
 adoption_history <- simulate_diffusion(initial_graph, total_phase, node_strength, numer_phases, node_colors, phase_colors)
 adoption_history
 
